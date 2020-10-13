@@ -3841,7 +3841,12 @@ static void xwl_data_offer_receive(struct wl_client *client,
     int rv;
 
     rv = ioctl(host->xwl->virtwl_fd, VIRTWL_IOCTL_NEW, &new_pipe);
-    assert(!rv);
+    if (rv) {
+      fprintf(stderr, "error: failed to create virtwl pipe: %s\n",
+              strerror(errno));
+      close(fd);
+      return;
+    }
 
     xwl_data_transfer_create(wl_display_get_event_loop(host->xwl->host_display),
                              new_pipe.fd, fd);
@@ -5831,7 +5836,12 @@ static void xwl_send_data(struct xwl *xwl) {
     };
 
     rv = ioctl(xwl->virtwl_fd, VIRTWL_IOCTL_NEW, &new_pipe);
-    assert(!rv);
+    if (rv) {
+      fprintf(stderr, "error: failed to create virtwl pipe: %s\n",
+              strerror(errno));
+      xwl_send_selection_notify(xwl, XCB_ATOM_NONE);
+      return;
+    }
 
     xwl->selection_data_offer_receive_fd = new_pipe.fd;
     wl_data_offer_receive(xwl->selection_data_offer->internal,
